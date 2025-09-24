@@ -5,6 +5,12 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+
+		<!-- Make the compiled DLL name what callers expect -->
+		<AssemblyName>LogExample.Serilog</AssemblyName>
+
+		<!-- Optional but tidy: set default namespace to your new code namespace -->
+		<RootNamespace>LogExample.ExSerilog</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Serilog.Context;
 using System.Diagnostics;
 
 namespace CopenhagenCityBikes.Api.Helpers
@@ -13,7 +12,13 @@ namespace CopenhagenCityBikes.Api.Helpers
             _logger = logger;
         }
 
-        private async Task<(int status, T? result)> RunInternalAsync<T>(Func<Task<T?>> action, Func<T?, int> determineStatus, string method, string path, string? correlationId = null, string? userId = null)
+        private async Task<(int status, T? result)> RunInternalAsync<T>(
+            Func<Task<T?>> action,
+            Func<T?, int> determineStatus,
+            string method,
+            string path,
+            string? correlationId = null,
+            string? userId = null)
         {
             var sw = Stopwatch.StartNew();
             T? result = default;
@@ -23,20 +28,19 @@ namespace CopenhagenCityBikes.Api.Helpers
                 result = await action();
                 status = determineStatus(result);
             }
-            catch (Exception)
+            catch
             {
                 status = 500;
             }
             finally
             {
                 sw.Stop();
-                using (LogContext.PushProperty("correlation_id", correlationId))
-                {
-                    if (userId is null)
-                        _logger.LogInformation("Request handled method={method} path={path} status={status} elapsed_ms={elapsed}", method, path, status, sw.ElapsedMilliseconds);
-                    else
-                        _logger.LogInformation("Request handled method={method} path={path} status={status} elapsed_ms={elapsed} user_id={user}", method, path, status, sw.ElapsedMilliseconds, userId);
-                }
+                if (userId is null)
+                    _logger.LogInformation("Request handled method={method} path={path} status={status} elapsed_ms={elapsed}",
+                        method, path, status, sw.ElapsedMilliseconds);
+                else
+                    _logger.LogInformation("Request handled method={method} path={path} status={status} elapsed_ms={elapsed} user_id={user}",
+                        method, path, status, sw.ElapsedMilliseconds, userId);
             }
 
             return (status, result);
@@ -44,23 +48,16 @@ namespace CopenhagenCityBikes.Api.Helpers
 
         public Task<(int status, T? result)> RunAsync<T>(Func<Task<T?>> action, string method, string path, string? correlationId = null, string? userId = null)
             where T : class
-        {
-            return RunInternalAsync<T>(
-                action,
+            => RunInternalAsync(action,
                 result =>
                 {
-                    if (result is null) return 400; // BadRequest / not found / simulated failure
+                    if (result is null) return 400;
                     return result.GetType().Name.Contains("Reservation") ? 201 : 200;
-                },
-                method, path, correlationId, userId);
-        }
+                }, method, path, correlationId, userId);
 
         public Task<(int status, bool result)> RunAsync(Func<Task<bool>> action, string method, string path, string? correlationId = null, string? userId = null)
-        {
-            return RunInternalAsync<bool>(
-                action,
-                outcome => outcome ? 200 : 400,
+            => RunInternalAsync(action,
+                ok => ok ? 200 : 400,
                 method, path, correlationId, userId);
-        }
     }
 }

@@ -19,7 +19,6 @@ namespace CopenhagenCityBikes.Services
         };
 
         private static readonly Dictionary<string, Reservation> _reservations = new();
-
         private static readonly Dictionary<string, Rental> _rentals = new();
 
         private static readonly Dictionary<string, string> _users = new()
@@ -49,155 +48,128 @@ namespace CopenhagenCityBikes.Services
 
         public async Task<Reservation?> ReserveBikeAsync(ReserveRequest req, HttpContext ctx)
         {
-            var bike = _bikes.FirstOrDefault(b => b.Id == req.BikeId && b.Available);
-            if (bike == null)
+            var bike = _bikes.FirstOrDefault(b => b.Id == req.BikeId);
+            if (bike == null || !bike.Available)
             {
-                _logger.LogError("Reservation failed bike_id={bike_id} error=\"SoldOutException\"", req.BikeId);
+                _logger.LogError("Reservation failed bike_id={bikeId} reason={reason}", req.BikeId, bike == null ? "NOT_FOUND" : "UNAVAILABLE");
                 return null;
             }
 
-            try
+            // Simulate external call timing
+            await Helpers.TimeIt.TimeItAsync(_logger, LogLevel.Information, "External payment verification", async () =>
             {
-                await TimeIt.TimeItAsync(_logger, LogLevel.Information, "Payment service call", async () =>
-                {
-                    var delay = Random.Shared.Next(100, 1000);
-                    await Task.Delay(delay);
-                    if (delay > 500)
-                    {
-                        _logger.LogWarning("Payment service slow elapsed_ms={delay} using_fallback=false", delay);
-                    }
-                    if (Random.Shared.NextDouble() < 0.1)
-                    {
-                        throw new Exception("Payment failed");
-                    }
-                    _logger.LogInformation("External call simulation success latency={delay}", delay);
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Reservation failed due to payment error");
-                return null;
-            }
+                await Task.Delay(Random.Shared.Next(50, 150));
+                _logger.LogInformation("External call simulation success latency={delay}", "ok");
+            });
 
             bike.Available = false;
             var resId = Guid.NewGuid().ToString()[0..8];
-            var res = new Reservation { Id = resId, UserId = req.UserId, BikeId = req.BikeId, StartTime = DateTime.UtcNow };
+            var res = new Reservation
+            {
+                Id = resId,
+                UserId = req.UserId,
+                BikeId = req.BikeId,
+                StartTime = DateTime.UtcNow
+            };
             _reservations[resId] = res;
 
-            var ip = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var ip = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             AuditHelper.LogReservationCreate(req.UserId, req.BikeId, ip);
-
-            _logger.LogInformation("Reservation created reservation_id={reservation_id} user_id={user_id} bike_id={bike_id}", res.Id, req.UserId, req.BikeId);
-
             return res;
         }
 
-        public async Task<Rental?> StartRentalAsync(StartRentalRequest req, HttpContext ctx)
+        public Task<Rental?> StartRentalAsync(string reservationId, string userId, HttpContext ctx)
         {
-            if (!_reservations.TryGetValue(req.ReservationId, out var res) || res.UserId != req.UserId)
+            if (!_reservations.TryGetValue(reservationId, out var res) || res.UserId != userId)
             {
-                _logger.LogError("Start rental failed reservation_id={reservation_id} error=\"InvalidReservation\"", req.ReservationId);
-                return null;
+                _logger.LogError("Rental start failed reservation_id={resId} reason={reason}", reservationId, "NOT_FOUND_OR_UNAUTHORIZED");
+                return Task.FromResult<Rental?>(null);
             }
 
-            try
+            var rental = new Rental
             {
-                await TimeIt.TimeItAsync(_logger, LogLevel.Debug, "Verification service", async () =>
-                {
-                    await Task.Delay(Random.Shared.Next(50, 200));
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Verification failed");
-                return null;
-            }
+                Id = Guid.NewGuid().ToString()[0..8],
+                UserId = userId,
+                BikeId = res.BikeId,
+                StartTime = DateTime.UtcNow
+            };
+            _rentals[rental.Id] = rental;
+            _reservations.Remove(reservationId);
 
-            var rentalId = Guid.NewGuid().ToString()[0..8];
-            var rental = new Rental { Id = rentalId, ReservationId = req.ReservationId, StartTime = DateTime.UtcNow };
-            _rentals[rentalId] = rental;
+            var ip = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            AuditHelper.LogRentalStart(userId, rental.Id, ip);
 
-            var ip = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            AuditHelper.LogRentalStart(req.UserId, rentalId, ip);
-
-            _logger.LogInformation("Rental started rental_id={rental_id} reservation_id={reservation_id} user_id={user_id}", rental.Id, req.ReservationId, req.UserId);
-
-            return rental;
+            _logger.LogInformation("Rental started rental_id={id} bike_id={bike}", rental.Id, rental.BikeId);
+            return Task.FromResult<Rental?>(rental);
         }
 
-        public async Task<Rental?> EndRentalAsync(EndRentalRequest req, HttpContext ctx)
+        public Task<bool> EndRentalAsync(string rentalId, string userId, HttpContext ctx)
         {
-            if (!_rentals.TryGetValue(req.RentalId, out var rental) || !_reservations.TryGetValue(rental.ReservationId, out var res) || res.UserId != req.UserId)
+            if (!_rentals.TryGetValue(rentalId, out var rental) || rental.UserId != userId)
             {
-                _logger.LogError("End rental failed rental_id={rental_id} error=\"InvalidRental\"", req.RentalId);
-                return null;
+                _logger.LogError("Rental end failed rental_id={id} reason={reason}", rentalId, "NOT_FOUND_OR_UNAUTHORIZED");
+                return Task.FromResult(false);
             }
 
             rental.EndTime = DateTime.UtcNow;
-            rental.Duration = rental.EndTime - rental.StartTime;
-            rental.Fees = (decimal)rental.Duration.Value.TotalHours * 10m; // Assume $10/hour
 
-            var bike = _bikes.First(b => b.Id == res.BikeId);
+            var duration = rental.EndTime.Value - rental.StartTime;
+            var fees = Math.Round((decimal)duration.TotalMinutes * 0.5m, 2);
+
+            var bike = _bikes.First(b => b.Id == rental.BikeId);
             bike.Available = true;
 
-            var ip = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            AuditHelper.LogRentalEnd(req.UserId, req.RentalId, ip, rental.Duration.Value, rental.Fees.Value);
+            var ip = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            AuditHelper.LogRentalEnd(userId, rental.Id, ip, duration, fees);
 
-            _logger.LogInformation("Rental ended rental_id={rental_id} duration_ms={duration} fees={fees}", rental.Id, (int)rental.Duration.Value.TotalMilliseconds, rental.Fees.Value);
+            _logger.LogInformation("Rental ended rental_id={id} duration_ms={dur} fees={fees}",
+                rental.Id, (long)duration.TotalMilliseconds, fees);
 
-            return rental;
+            return Task.FromResult(true);
         }
 
-        public Task<bool> LoginAsync(LoginRequest req, HttpContext ctx)
+        public Task<bool> LoginAsync(string userId, string password, HttpContext ctx)
         {
-            var success = _users.TryGetValue(req.UserId, out var storedPass) && storedPass == req.Password; // Stub, no hash for sim
-            var ip = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
-            if (success)
+            var ip = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var ok = _users.TryGetValue(userId, out var pw) && pw == password;
+            if (ok)
             {
-                AuditHelper.LogLoginSuccess(req.UserId, ip);
-                _logger.LogInformation("Login success user_id={user_id}", req.UserId);
-                return Task.FromResult(true);
+                AuditHelper.LogLoginSuccess(userId, ip);
+                _logger.LogInformation("Login success user_id={user}", userId);
             }
             else
             {
-                _logger.LogWarning("Login failure attempt for user_id={user_id}", req.UserId);
-                AuditHelper.LogLoginFailure(req.UserId, ip);
-                return Task.FromResult(false);
+                AuditHelper.LogLoginFailure(userId, ip);
+                _logger.LogWarning("Login failure user_id={user}", userId);
             }
+            return Task.FromResult(ok);
         }
 
-        public Task<bool> UpdateInventoryAsync(InventoryUpdateRequest req, HttpContext ctx)
+        public Task<bool> AdjustInventoryAsync(string adminId, int delta, HttpContext ctx)
         {
-            if (!_users.ContainsKey(req.AdminId))
+            var ip = ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            if (!_users.ContainsKey(adminId) || !adminId.StartsWith("admin"))
             {
-                _logger.LogError("Inventory update failed admin_id={admin_id} error=\"Unauthorized\"", req.AdminId);
+                _logger.LogWarning("Inventory update denied admin_id={admin}", adminId);
                 return Task.FromResult(false);
             }
 
-            var bike = _bikes.FirstOrDefault(b => b.Id == req.BikeId);
-            if (bike != null)
+            if (delta > 0)
             {
-                bike.Available = req.Delta > 0;
-            }
-            else
-            {
-                if (req.Delta > 0)
+                for (int i = 0; i < delta; i++)
                 {
-                    _bikes.Add(new Bike { Id = req.BikeId, Available = true });
-                }
-                else
-                {
-                    _logger.LogWarning("Cannot remove non-existent bike bike_id={bike_id}", req.BikeId);
-                    return Task.FromResult(false);
+                    _bikes.Add(new Bike { Id = $"b-new-{Guid.NewGuid().ToString()[0..4]}", Available = true });
                 }
             }
+            else if (delta < 0)
+            {
+                var toRemove = _bikes.Where(b => b.Available).Take(Math.Abs(delta)).ToList();
+                foreach (var b in toRemove)
+                    _bikes.Remove(b);
+            }
 
-            var ip = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            AuditHelper.LogAdminInventoryUpdate(req.AdminId, req.Delta, ip);
-
-            _logger.LogInformation("Inventory updated admin_id={admin_id} bike_id={bike_id} delta={delta}", req.AdminId, req.BikeId, req.Delta);
-
+            AuditHelper.LogAdminInventoryUpdate(adminId, delta, ip);
+            _logger.LogInformation("Inventory adjusted admin_id={admin} delta={delta}", adminId, delta);
             return Task.FromResult(true);
         }
     }

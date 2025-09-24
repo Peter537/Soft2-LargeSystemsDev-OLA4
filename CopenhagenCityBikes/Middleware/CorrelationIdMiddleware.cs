@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Serilog.Context;
+﻿
+using Microsoft.AspNetCore.Http;
+using NLog;
+using System.Net.Http;
 
 namespace CopenhagenCityBikes.Middleware
 {
@@ -7,17 +9,23 @@ namespace CopenhagenCityBikes.Middleware
     {
         private readonly RequestDelegate _next;
 
-        public CorrelationIdMiddleware(RequestDelegate next)
-        {
-            _next = next;
-        }
+        public CorrelationIdMiddleware(RequestDelegate next) => _next = next;
 
         public async Task InvokeAsync(HttpContext context)
         {
-            var correlationId = Guid.NewGuid().ToString();
-            using (LogContext.PushProperty("correlation_id", correlationId))
+            var cid = Guid.NewGuid().ToString();
+            var prev = MappedDiagnosticsLogicalContext.Get("correlation_id");
+            MappedDiagnosticsLogicalContext.Set("correlation_id", cid);
+            try
             {
                 await _next(context);
+            }
+            finally
+            {
+                if (prev == null)
+                    MappedDiagnosticsLogicalContext.Remove("correlation_id");
+                else
+                    MappedDiagnosticsLogicalContext.Set("correlation_id", prev);
             }
         }
     }

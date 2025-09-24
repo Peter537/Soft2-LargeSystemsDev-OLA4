@@ -1,136 +1,189 @@
-﻿using CopenhagenCityBikes.Api.Helpers;
-using CopenhagenCityBikes.Api.Models;
+﻿using System.Net;
+using CopenhagenCityBikes.Api.Helpers;
+using CopenhagenCityBikes.Api.Models; // For ReserveRequest
 using CopenhagenCityBikes.Helpers;
 using CopenhagenCityBikes.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Serilog;
-using Serilog.Context;
-using System.Net;
+using Microsoft.Extensions.Logging;
+using NLog;
+using NLog.Extensions.Logging;
 
-var logger = new LoggerConfiguration()
-    .Enrich.FromLogContext()
-    .WriteTo.Console()
-    .WriteTo.File(
-        path: "logs/system-.log",
-        rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 14,
-        shared: true,
-        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] ({correlation_id}) {Message:lj}{NewLine}{Exception}")
-    .CreateLogger();
+var bootstrapLogger = LogManager.Setup()
+    .LoadConfigurationFromFile("nlog.config", optional: false)
+    .GetCurrentClassLogger();
 
-Log.Logger = logger;
+try
+{
+    bootstrapLogger.Info("Application startup");
 
-Log.Information("Application startup");
+    AuditHelper.Initialize();
 
-AuditHelper.Initialize();
+    using IHost host = Host.CreateDefaultBuilder(args)
+        .ConfigureLogging(logging =>
+        {
+            logging.ClearProviders();
+            logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Information);
+            logging.AddNLog(); // Bridge Microsoft ILogger<T> to NLog
+        })
+        .ConfigureServices(services =>
+        {
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddSingleton<BikeService>();
+            services.AddSingleton<SimulatedRequestRunner>();
+        })
+        .Build();
 
-#region Simulated Operations
-using IHost host = Host.CreateDefaultBuilder(args)
-    .UseSerilog()
-    .ConfigureServices(services =>
+    var svc = host.Services.GetRequiredService<BikeService>();
+    var httpContextAccessor = host.Services.GetRequiredService<IHttpContextAccessor>();
+    var runner = host.Services.GetRequiredService<SimulatedRequestRunner>();
+    var logger = LogManager.GetCurrentClassLogger();
+
+    var rand = new Random();
+
+    static HttpContext CreateFakeContext(string correlationId)
     {
-        services.AddSingleton<BikeService>();
-        services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-        services.AddSingleton<SimulatedRequestRunner>();
-    })
-    .Build();
+        var ctx = new DefaultHttpContext();
+        ctx.Connection.RemoteIpAddress = IPAddress.Parse($"192.168.0.{Random.Shared.Next(2, 254)}");
+        ctx.Items["CorrelationId"] = correlationId;
+        return ctx;
+    }
 
-var svc = host.Services.GetRequiredService<BikeService>();
-var httpContextAccessor = host.Services.GetRequiredService<IHttpContextAccessor>();
-var runner = host.Services.GetRequiredService<SimulatedRequestRunner>();
+    var operations = new[] { "get", "reserve", "start", "end", "login", "inventory" };
+    var createdReservations = new List<string>();
+    var createdRentals = new List<string>();
 
-var rand = new Random();
+    // Build a sequence that guarantees each op at least once, then fill to 30 and shuffle
+    var sequence = new List<string>(operations);
+    while (sequence.Count < 30)
+        sequence.Add(operations[rand.Next(operations.Length)]);
+    sequence = sequence.OrderBy(_ => rand.Next()).ToList();
 
-static HttpContext CreateFakeContext(string correlationId)
-{
-    var ctx = new DefaultHttpContext();
-    ctx.Connection.RemoteIpAddress = IPAddress.Parse($"192.168.0.{new Random().Next(2, 254)}");
-    ctx.Items["CorrelationId"] = correlationId;
-    return ctx;
-}
-
-var operations = new[] { "get", "reserve", "start", "end", "login", "inventory" };
-
-var createdReservations = new List<string>();
-var createdRentals = new List<string>();
-
-// En sekvens af 30 operations hvor alle bliver lavet minimum 1 gang
-var sequence = new List<string>();
-sequence.AddRange(operations);
-while (sequence.Count < 30)
-{
-    sequence.Add(operations[rand.Next(operations.Length)]);
-}
-sequence = sequence.OrderBy(_ => rand.Next()).ToList();
-
-foreach (var op in sequence)
-{
-    var correlationId = Guid.NewGuid().ToString();
-    using (LogContext.PushProperty("correlation_id", correlationId))
+    foreach (var op in sequence)
     {
-        var ctx = CreateFakeContext(correlationId);
-        httpContextAccessor.HttpContext = ctx;
-
+        var correlationId = Guid.NewGuid().ToString();
+        NLog.MappedDiagnosticsLogicalContext.Set("correlation_id", correlationId);
         try
         {
+            var ctx = CreateFakeContext(correlationId);
+            httpContextAccessor.HttpContext = ctx;
+
             switch (op)
             {
                 case "get":
-                    var (statusGet, bikes) = await runner.RunAsync(() => svc.GetAvailableBikesAsync(), "GET", "/bikes", correlationId);
-                    break;
+                    {
+                        var getResult = await runner.RunAsync(
+                            () => svc.GetAvailableBikesAsync(),
+                            "GET", "/bikes", correlationId);
+                        // getResult.result is List<Bike>
+                        break;
+                    }
+
                 case "reserve":
-                    var avail = (await svc.GetAvailableBikesAsync()).ToList();
-                    if (avail.Count == 0)
+                    {
+                        var bikes = await svc.GetAvailableBikesAsync();
+                        var avail = bikes.Where(b => b.Available).ToList();
+                        if (avail.Count == 0)
+                            break;
+
+                        var bike = avail[rand.Next(avail.Count)];
+                        var req = new ReserveRequest("u123", bike.Id);
+
+                        var reserveResult = await runner.RunAsync(
+                            () => svc.ReserveBikeAsync(req, ctx),
+                            "POST", "/reservations", correlationId, "u123");
+
+                        if (reserveResult.result != null)
+                            createdReservations.Add(reserveResult.result.Id);
+
                         break;
-                    var bike = avail[rand.Next(avail.Count)];
-                    var resReq = new ReserveRequest("u123", bike.Id);
-                    var (statusRes, reservation) = await runner.RunAsync(() => svc.ReserveBikeAsync(resReq, ctx), "POST", "/reservations", correlationId, "u123");
-                    if (reservation != null)
-                        createdReservations.Add(reservation.Id);
-                    break;
+                    }
+
                 case "start":
-                    if (createdReservations.Count == 0)
+                    {
+                        if (createdReservations.Count == 0)
+                            break;
+
+                        var reservationId = createdReservations[rand.Next(createdReservations.Count)];
+
+                        var startResult = await runner.RunAsync(
+                            () => svc.StartRentalAsync(reservationId, "u123", ctx),
+                            "POST", "/rentals/start", correlationId, "u123");
+
+                        var rental = startResult.result;
+                        if (rental != null && !createdRentals.Contains(rental.Id))
+                            createdRentals.Add(rental.Id);
+
                         break;
-                    var rid = createdReservations[rand.Next(createdReservations.Count)];
-                    var startReq = new StartRentalRequest("u123", rid);
-                    var (statusStart, rental) = await runner.RunAsync(() => svc.StartRentalAsync(startReq, ctx), "POST", "/rentals/start", correlationId, "u123");
-                    if (rental != null)
-                        createdRentals.Add(rental.Id);
-                    break;
+                    }
+
                 case "end":
-                    if (createdRentals.Count == 0)
+                    {
+                        if (createdRentals.Count == 0)
+                            break;
+
+                        var rentalId = createdRentals[rand.Next(createdRentals.Count)];
+
+                        var endResult = await runner.RunAsync(
+                            () => svc.EndRentalAsync(rentalId, "u123", ctx),
+                            "POST", "/rentals/end", correlationId, "u123");
+
+                        // endResult.result is bool (true success)
                         break;
-                    var rentId = createdRentals[rand.Next(createdRentals.Count)];
-                    var endReq = new EndRentalRequest("u123", rentId);
-                    var (statusEnd, ended) = await runner.RunAsync(() => svc.EndRentalAsync(endReq, ctx), "POST", "/rentals/end", correlationId, "u123");
-                    break;
+                    }
+
                 case "login":
-                    var useSuccess = rand.NextDouble() < 0.8;
-                    var loginReq = new LoginRequest(useSuccess ? "u123" : "unknown", useSuccess ? "password" : "bad");
-                    var (statusLogin, loginOk) = await runner.RunAsync(() => svc.LoginAsync(loginReq, ctx), "POST", "/auth/login", correlationId, loginReq.UserId);
-                    break;
+                    {
+                        // Simulate one success + one failure each loop
+                        var firstSuccess = rand.NextDouble() < 0.7;
+
+                        var login1 = await runner.RunAsync(
+                            () => svc.LoginAsync("u123", firstSuccess ? "password" : "wrong", ctx),
+                            "POST", "/login", correlationId, "u123");
+
+                        var login2 = await runner.RunAsync(
+                            () => svc.LoginAsync("u123", firstSuccess ? "wrong" : "password", ctx),
+                            "POST", "/login", correlationId, "u123");
+
+                        break;
+                    }
+
                 case "inventory":
-                    var invReq = new InventoryUpdateRequest("admin1", $"b-{rand.Next(100,200)}", 1);
-                    var (statusInv, invOk) = await runner.RunAsync(() => svc.UpdateInventoryAsync(invReq, ctx), "POST", "/admin/inventory", correlationId, invReq.AdminId);
-                    break;
+                    {
+                        // Adjust inventory (admin). Negative removes availability, positive adds new bikes (per your implementation)
+                        var delta = rand.Next(-2, 4);
+
+                        var invResult = await runner.RunAsync(
+                            () => svc.AdjustInventoryAsync("admin1", delta, ctx),
+                            "POST", "/inventory", correlationId, "admin1");
+
+                        break;
+                    }
+
                 default:
+                    logger.Warn("Unknown simulated operation op={op}", op);
                     break;
             }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Operation {op} failed", op);
+            logger.Error(ex, "Unhandled exception in operation loop op={op}", op);
         }
-
-        await Task.Delay(rand.Next(50, 200));
+        finally
+        {
+            NLog.MappedDiagnosticsLogicalContext.Remove("correlation_id");
+        }
     }
+
+    bootstrapLogger.Info("Application shutdown");
 }
-#endregion
-
-Log.Information("Application shutdown");
-
-Log.CloseAndFlush();
-
-return 0;
+catch (Exception ex)
+{
+    bootstrapLogger.Error(ex, "Fatal exception during startup");
+    throw;
+}
+finally
+{
+    LogManager.Shutdown();
+}

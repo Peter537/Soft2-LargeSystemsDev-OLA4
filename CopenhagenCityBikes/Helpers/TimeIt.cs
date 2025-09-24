@@ -13,15 +13,15 @@ namespace CopenhagenCityBikes.Helpers
                 return;
             }
 
-            var stopwatch = Stopwatch.StartNew();
+            var sw = Stopwatch.StartNew();
             try
             {
                 await action();
             }
             finally
             {
-                stopwatch.Stop();
-                logger.Log(level, "{description} elapsed_ms={elapsed}", description, stopwatch.ElapsedMilliseconds);
+                sw.Stop();
+                logger.Log(level, "{description} elapsed_ms={elapsed}", description, sw.ElapsedMilliseconds);
             }
         }
     }

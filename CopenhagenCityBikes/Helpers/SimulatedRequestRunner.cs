@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
-namespace CopenhagenCityBikes.Api.Helpers
+namespace CopenhagenCityBikes.Helpers
 {
     public class SimulatedRequestRunner
     {

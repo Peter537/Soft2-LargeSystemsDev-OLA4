@@ -1,5 +1,4 @@
-﻿using CopenhagenCityBikes.Api.Models;
-using CopenhagenCityBikes.Helpers;
+﻿using CopenhagenCityBikes.Helpers;
 using CopenhagenCityBikes.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -46,7 +45,7 @@ namespace CopenhagenCityBikes.Services
             return Task.FromResult(available);
         }
 
-        public async Task<Reservation?> ReserveBikeAsync(ReserveRequest req, HttpContext ctx)
+        public async Task<Reservation?> ReserveBikeAsync(ReservationRequest req, HttpContext ctx)
         {
             var bike = _bikes.FirstOrDefault(b => b.Id == req.BikeId);
             if (bike == null || !bike.Available)

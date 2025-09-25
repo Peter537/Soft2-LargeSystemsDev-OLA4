@@ -1,7 +1,6 @@
 ﻿using System.Net;
-using CopenhagenCityBikes.Api.Helpers;
-using CopenhagenCityBikes.Api.Models; // For ReserveRequest
 using CopenhagenCityBikes.Helpers;
+using CopenhagenCityBikes.Models;
 using CopenhagenCityBikes.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -88,7 +87,7 @@ try
                             break;
 
                         var bike = avail[rand.Next(avail.Count)];
-                        var req = new ReserveRequest("u123", bike.Id);
+                        var req = new ReservationRequest("u123", bike.Id);
 
                         var reserveResult = await runner.RunAsync(
                             () => svc.ReserveBikeAsync(req, ctx),

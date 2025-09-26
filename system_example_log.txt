@@ -1,0 +1,90 @@
+2025-09-26 10:35:20.1081 [INF] (-) Application startup
+2025-09-26 10:35:20.3437 [WAR] (5c519c7e-0ca4-4cbf-b35e-8958fa2b9c4c) Login failure user_id=u123
+2025-09-26 10:35:20.3437 [INF] (5c519c7e-0ca4-4cbf-b35e-8958fa2b9c4c) Request handled method=POST path=/login status=400 elapsed_ms=21 user_id=u123
+2025-09-26 10:35:20.3554 [INF] (5c519c7e-0ca4-4cbf-b35e-8958fa2b9c4c) Login success user_id=u123
+2025-09-26 10:35:20.3554 [INF] (5c519c7e-0ca4-4cbf-b35e-8958fa2b9c4c) Request handled method=POST path=/login status=200 elapsed_ms=1 user_id=u123
+2025-09-26 10:35:20.3554 [INF] (de37c73c-2292-49c8-81f9-3621b1fb8323) Login success user_id=u123
+2025-09-26 10:35:20.3554 [INF] (de37c73c-2292-49c8-81f9-3621b1fb8323) Request handled method=POST path=/login status=200 elapsed_ms=1 user_id=u123
+2025-09-26 10:35:20.3554 [WAR] (de37c73c-2292-49c8-81f9-3621b1fb8323) Login failure user_id=u123
+2025-09-26 10:35:20.3627 [INF] (de37c73c-2292-49c8-81f9-3621b1fb8323) Request handled method=POST path=/login status=400 elapsed_ms=2 user_id=u123
+2025-09-26 10:35:20.3627 [INF] (ffa82d2a-e1ed-4c2c-adbc-77e430b61fea) Login success user_id=u123
+2025-09-26 10:35:20.3627 [INF] (ffa82d2a-e1ed-4c2c-adbc-77e430b61fea) Request handled method=POST path=/login status=200 elapsed_ms=0 user_id=u123
+2025-09-26 10:35:20.3627 [WAR] (ffa82d2a-e1ed-4c2c-adbc-77e430b61fea) Login failure user_id=u123
+2025-09-26 10:35:20.3627 [INF] (ffa82d2a-e1ed-4c2c-adbc-77e430b61fea) Request handled method=POST path=/login status=400 elapsed_ms=0 user_id=u123
+2025-09-26 10:35:20.3627 [INF] (f64a98b2-84c7-4298-8ec0-a53598fbae6e) Login success user_id=u123
+2025-09-26 10:35:20.3627 [INF] (f64a98b2-84c7-4298-8ec0-a53598fbae6e) Request handled method=POST path=/login status=200 elapsed_ms=0 user_id=u123
+2025-09-26 10:35:20.3627 [WAR] (f64a98b2-84c7-4298-8ec0-a53598fbae6e) Login failure user_id=u123
+2025-09-26 10:35:20.3627 [INF] (f64a98b2-84c7-4298-8ec0-a53598fbae6e) Request handled method=POST path=/login status=400 elapsed_ms=0 user_id=u123
+2025-09-26 10:35:20.3627 [WAR] (a73b76b3-6c8e-4551-8069-cf6423c52bde) Low inventory count=2
+2025-09-26 10:35:20.3627 [INF] (a73b76b3-6c8e-4551-8069-cf6423c52bde) GET /bikes returned 2 bikes
+2025-09-26 10:35:20.5124 [INF] (a73b76b3-6c8e-4551-8069-cf6423c52bde) External call simulation success latency=ok
+2025-09-26 10:35:20.5124 [INF] (a73b76b3-6c8e-4551-8069-cf6423c52bde) External payment verification elapsed_ms=140
+2025-09-26 10:35:20.5209 [INF] (a73b76b3-6c8e-4551-8069-cf6423c52bde) Request handled method=POST path=/reservations status=201 elapsed_ms=152 user_id=u123
+2025-09-26 10:35:20.5209 [WAR] (c9598f98-a15c-4c25-a251-3273760f4348) Low inventory count=1
+2025-09-26 10:35:20.5344 [INF] (c9598f98-a15c-4c25-a251-3273760f4348) GET /bikes returned 1 bikes
+2025-09-26 10:35:20.6780 [INF] (c9598f98-a15c-4c25-a251-3273760f4348) External call simulation success latency=ok
+2025-09-26 10:35:20.6780 [INF] (c9598f98-a15c-4c25-a251-3273760f4348) External payment verification elapsed_ms=142
+2025-09-26 10:35:20.6780 [INF] (c9598f98-a15c-4c25-a251-3273760f4348) Request handled method=POST path=/reservations status=201 elapsed_ms=144 user_id=u123
+2025-09-26 10:35:20.6780 [INF] (87215336-6a5f-4291-9a1a-9410fe524787) Login success user_id=u123
+2025-09-26 10:35:20.6780 [INF] (87215336-6a5f-4291-9a1a-9410fe524787) Request handled method=POST path=/login status=200 elapsed_ms=1 user_id=u123
+2025-09-26 10:35:20.6780 [WAR] (87215336-6a5f-4291-9a1a-9410fe524787) Login failure user_id=u123
+2025-09-26 10:35:20.6780 [INF] (87215336-6a5f-4291-9a1a-9410fe524787) Request handled method=POST path=/login status=400 elapsed_ms=1 user_id=u123
+2025-09-26 10:35:20.6780 [WAR] (5599e6ba-9ab1-4710-9c39-38fcfda9126d) Low inventory count=0
+2025-09-26 10:35:20.6780 [INF] (5599e6ba-9ab1-4710-9c39-38fcfda9126d) GET /bikes returned 0 bikes
+2025-09-26 10:35:20.6780 [INF] (5599e6ba-9ab1-4710-9c39-38fcfda9126d) Request handled method=GET path=/bikes status=200 elapsed_ms=2
+2025-09-26 10:35:20.6906 [WAR] (52017334-2284-461d-ba0b-51af1f83fc39) Login failure user_id=u123
+2025-09-26 10:35:20.6906 [INF] (52017334-2284-461d-ba0b-51af1f83fc39) Request handled method=POST path=/login status=400 elapsed_ms=1 user_id=u123
+2025-09-26 10:35:20.6906 [INF] (52017334-2284-461d-ba0b-51af1f83fc39) Login success user_id=u123
+2025-09-26 10:35:20.6906 [INF] (52017334-2284-461d-ba0b-51af1f83fc39) Request handled method=POST path=/login status=200 elapsed_ms=0 user_id=u123
+2025-09-26 10:35:20.6906 [INF] (2f01a173-b63a-4918-a2f7-2b39d8e43be7) Rental started rental_id=383f31b0 bike_id=b-42
+2025-09-26 10:35:20.6906 [INF] (2f01a173-b63a-4918-a2f7-2b39d8e43be7) Request handled method=POST path=/rentals/start status=200 elapsed_ms=4 user_id=u123
+2025-09-26 10:35:20.6906 [INF] (4153ec22-2db6-4930-92a2-4d69bb796632) Inventory adjusted admin_id=admin1 delta=1
+2025-09-26 10:35:20.6906 [INF] (4153ec22-2db6-4930-92a2-4d69bb796632) Request handled method=POST path=/inventory status=200 elapsed_ms=3 user_id=admin1
+2025-09-26 10:35:20.6906 [WAR] (a0535d77-e004-42b2-92bb-54af18af42c7) Low inventory count=1
+2025-09-26 10:35:20.6906 [INF] (a0535d77-e004-42b2-92bb-54af18af42c7) GET /bikes returned 1 bikes
+2025-09-26 10:35:20.8447 [INF] (a0535d77-e004-42b2-92bb-54af18af42c7) External call simulation success latency=ok
+2025-09-26 10:35:20.8447 [INF] (a0535d77-e004-42b2-92bb-54af18af42c7) External payment verification elapsed_ms=140
+2025-09-26 10:35:20.8472 [INF] (a0535d77-e004-42b2-92bb-54af18af42c7) Request handled method=POST path=/reservations status=201 elapsed_ms=141 user_id=u123
+2025-09-26 10:35:20.8472 [INF] (ac132cd2-3275-4946-bd03-36508071ec21) Rental ended rental_id=383f31b0 duration_ms=153 fees=0.00
+2025-09-26 10:35:20.8472 [INF] (ac132cd2-3275-4946-bd03-36508071ec21) Request handled method=POST path=/rentals/end status=200 elapsed_ms=10 user_id=u123
+2025-09-26 10:35:20.8624 [INF] (3d79a70a-84e5-408b-bcf0-772d25e22229) Rental ended rental_id=383f31b0 duration_ms=164 fees=0.00
+2025-09-26 10:35:20.8624 [INF] (3d79a70a-84e5-408b-bcf0-772d25e22229) Request handled method=POST path=/rentals/end status=200 elapsed_ms=3 user_id=u123
+2025-09-26 10:35:20.8624 [INF] (1490112e-489e-4f1e-b975-ffc2986e6bed) Login success user_id=u123
+2025-09-26 10:35:20.8624 [INF] (1490112e-489e-4f1e-b975-ffc2986e6bed) Request handled method=POST path=/login status=200 elapsed_ms=1 user_id=u123
+2025-09-26 10:35:20.8624 [WAR] (1490112e-489e-4f1e-b975-ffc2986e6bed) Login failure user_id=u123
+2025-09-26 10:35:20.8624 [INF] (1490112e-489e-4f1e-b975-ffc2986e6bed) Request handled method=POST path=/login status=400 elapsed_ms=2 user_id=u123
+2025-09-26 10:35:20.8624 [WAR] (306f76ec-31cf-4e8a-af39-555e1ee15c76) Low inventory count=1
+2025-09-26 10:35:20.8624 [INF] (306f76ec-31cf-4e8a-af39-555e1ee15c76) GET /bikes returned 1 bikes
+2025-09-26 10:35:20.8624 [INF] (306f76ec-31cf-4e8a-af39-555e1ee15c76) Request handled method=GET path=/bikes status=200 elapsed_ms=1
+2025-09-26 10:35:20.8624 [WAR] (fc1b22a2-09bf-47c4-85f0-c856b8d7b5d9) Low inventory count=1
+2025-09-26 10:35:20.8624 [INF] (fc1b22a2-09bf-47c4-85f0-c856b8d7b5d9) GET /bikes returned 1 bikes
+2025-09-26 10:35:20.9449 [INF] (fc1b22a2-09bf-47c4-85f0-c856b8d7b5d9) External call simulation success latency=ok
+2025-09-26 10:35:20.9449 [INF] (fc1b22a2-09bf-47c4-85f0-c856b8d7b5d9) External payment verification elapsed_ms=70
+2025-09-26 10:35:20.9449 [INF] (fc1b22a2-09bf-47c4-85f0-c856b8d7b5d9) Request handled method=POST path=/reservations status=201 elapsed_ms=72 user_id=u123
+2025-09-26 10:35:20.9449 [INF] (e83f33c0-c99c-489e-860c-262af1c800b5) Inventory adjusted admin_id=admin1 delta=2
+2025-09-26 10:35:20.9449 [INF] (e83f33c0-c99c-489e-860c-262af1c800b5) Request handled method=POST path=/inventory status=200 elapsed_ms=2 user_id=admin1
+2025-09-26 10:35:20.9449 [INF] (827b72c0-5ded-457c-95a3-e23430f114a4) Inventory adjusted admin_id=admin1 delta=1
+2025-09-26 10:35:20.9559 [INF] (827b72c0-5ded-457c-95a3-e23430f114a4) Request handled method=POST path=/inventory status=200 elapsed_ms=1 user_id=admin1
+2025-09-26 10:35:20.9559 [WAR] (b518b4d3-3d21-46a6-8901-8399b3ea12b5) Login failure user_id=u123
+2025-09-26 10:35:20.9559 [INF] (b518b4d3-3d21-46a6-8901-8399b3ea12b5) Request handled method=POST path=/login status=400 elapsed_ms=2 user_id=u123
+2025-09-26 10:35:20.9559 [INF] (b518b4d3-3d21-46a6-8901-8399b3ea12b5) Login success user_id=u123
+2025-09-26 10:35:20.9559 [INF] (b518b4d3-3d21-46a6-8901-8399b3ea12b5) Request handled method=POST path=/login status=200 elapsed_ms=1 user_id=u123
+2025-09-26 10:35:20.9559 [INF] (87402dad-a805-4643-ad28-be255aeb4caf) Login success user_id=u123
+2025-09-26 10:35:20.9559 [INF] (87402dad-a805-4643-ad28-be255aeb4caf) Request handled method=POST path=/login status=200 elapsed_ms=2 user_id=u123
+2025-09-26 10:35:20.9559 [WAR] (87402dad-a805-4643-ad28-be255aeb4caf) Login failure user_id=u123
+2025-09-26 10:35:20.9559 [INF] (87402dad-a805-4643-ad28-be255aeb4caf) Request handled method=POST path=/login status=400 elapsed_ms=1 user_id=u123
+2025-09-26 10:35:20.9559 [INF] (f8860e22-9fea-44db-9737-dd782288e127) Rental ended rental_id=383f31b0 duration_ms=274 fees=0.00
+2025-09-26 10:35:20.9717 [INF] (f8860e22-9fea-44db-9737-dd782288e127) Request handled method=POST path=/rentals/end status=200 elapsed_ms=1 user_id=u123
+2025-09-26 10:35:20.9717 [INF] (893d4b2c-484a-4ccb-a0c2-8e1c326ee61a) GET /bikes returned 4 bikes
+2025-09-26 10:35:20.9717 [INF] (893d4b2c-484a-4ccb-a0c2-8e1c326ee61a) Request handled method=GET path=/bikes status=200 elapsed_ms=0
+2025-09-26 10:35:20.9717 [INF] (ab875750-1c57-465d-998b-91adfcc006ab) Rental started rental_id=21d408b1 bike_id=b-new-c7f3
+2025-09-26 10:35:20.9717 [INF] (ab875750-1c57-465d-998b-91adfcc006ab) Request handled method=POST path=/rentals/start status=200 elapsed_ms=1 user_id=u123
+2025-09-26 10:35:20.9717 [INF] (8d4f7a5f-c1bd-4ee4-9271-d10a997ffa43) Rental started rental_id=c10435ef bike_id=b-43
+2025-09-26 10:35:20.9717 [INF] (8d4f7a5f-c1bd-4ee4-9271-d10a997ffa43) Request handled method=POST path=/rentals/start status=200 elapsed_ms=0 user_id=u123
+2025-09-26 10:35:20.9717 [ERR] (da28d867-4e61-41bd-8120-e1fda92787fc) Rental start failed reservation_id=a1313419 reason=NOT_FOUND_OR_UNAUTHORIZED
+2025-09-26 10:35:20.9717 [INF] (da28d867-4e61-41bd-8120-e1fda92787fc) Request handled method=POST path=/rentals/start status=400 elapsed_ms=0 user_id=u123
+2025-09-26 10:35:20.9717 [INF] (914dce92-ac3e-445c-8e19-324b7641a4bf) GET /bikes returned 4 bikes
+2025-09-26 10:35:20.9717 [INF] (914dce92-ac3e-445c-8e19-324b7641a4bf) Request handled method=GET path=/bikes status=200 elapsed_ms=0
+2025-09-26 10:35:20.9717 [INF] (94a239ce-3566-41b0-afa6-41d51c2bde7c) Rental ended rental_id=383f31b0 duration_ms=284 fees=0.00
+2025-09-26 10:35:20.9717 [INF] (94a239ce-3566-41b0-afa6-41d51c2bde7c) Request handled method=POST path=/rentals/end status=200 elapsed_ms=1 user_id=u123
+2025-09-26 10:35:20.9717 [INF] (-) Application shutdown
